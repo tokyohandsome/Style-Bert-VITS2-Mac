@@ -41,3 +41,7 @@ safetensors.ipynb
 *.dic
 
 playground.ipynb
+
+.DS_Store
+**/__pycache__/**
+Pipfile

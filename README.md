@@ -4,9 +4,91 @@ Style-Bert-VITS2 を macOS で動くようにする repo です。
 Style-Bert-VITS2 Ver 2.6.1 をフォークして開発を進めます。  
 さしあたって、学習が CPU だけで行えるようになりました。当然遅いですが、これまで Mac では学習する手立てが無かったので一歩前進です。  
 試してないですが、Windows や Linux で NVIDIA GPU が無い環境でも実行できるかと。  
-近々変更済みスクリプトを公開します。  
 
-以下は全てオリジナルの repo の内容になります。
+とりあえずある程度を手動でやってもらうこととして、CPU だけで学習させてモデル一覧に追加されるまでの手順を以下にまとめます。  
+
+## インストール
+'''
+git clone https://github.com/tokyohandsome/Style-Bert-VITS2-Mac.git
+cd Style-Bert-VITS2-Mac
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+python initialize.py
+'''
+
+## Web UI 起動
+`app.py` は mps 決め打ちに書き換えていますので、音声合成は Mac の GPU で実行されます。  
+'''
+python app.py
+'''
+時間がかかりますが自動的にブラウザで開くはずなので、お待ちください。  
+
+## データセット作成
+ここはすみませんがとりあえず手作業でお願いします。  
+1. 2-12秒程度の音声ファイルを準備 (wav や mp3 等)
+2. モデル名 (フォルダ名) を決める (以下、`ModelName` として進めます)
+3. Data/ModelName/raw フォルダを作る `mkdir Data/ModelName/raw`
+4. Data/ModelName/raw フォルダに音声ファイルを格納
+4. Data/ModelName/esd.list というテキストファイルを作り、音声ファイル名と書き置きしたテキストを記入
+例:
+```esd.list
+audio1.wav|ModelName|JP|こんにちは、おげんきですか？
+```
+※音声ファイルの拡張子は、別のフォーマットであっても必ず '**.wav**' とする  
+
+音声ファイル一つの場合の構成:
+```
+Data/ModelName
+├── esd.list
+└── raw
+    └── audio1.mp3
+```
+
+## 学習
+ここは Web UI の学習タブにある、自動前処理を使います。
+1. モデル名を入力 (上の例では ModelName)
+2. [ 自動前処理を実行 ] ボタンをクリック
+3. Web UI の 状況のカウントアップが始まる
+4. ターミナルにログが表示される。INFO, DEBUG, SUCCESS のみの表示で、最後に Success: All process finished! と出ればおそらく成功
+こういう様なファイル構成になっているはず:
+```
+Data/ModelName
+├── config.json
+├── esd.list
+├── esd.list.cleaned
+├── models
+│   ├── D_0.safetensors
+│   ├── G_0.safetensors
+│   └── WD_0.safetensors
+├── preprocess_20241003_235233.log
+├── raw
+│   └── audio1.mp3
+├── train.list
+├── val.list
+└── wavs
+    ├── audio1.bert.pt
+    ├── audio1.wav
+    └── audio1.wav.npy
+```
+
+実際の学習はコマンドから実行します。
+1. Web UI を開いているのとは別のターミナルを開く
+2. Style-Bert-VITS2-Mac ディレクトリへ入る
+3. 以下コマンドを実行する (ModelName はご自身のものに書き換えてください)
+```
+python train_ms_jp_extra_cpu.py --config Data/ModelName/config.json --model Data/ModelName
+```
+CPU を使った学習が開始します。  
+ログに INFO や WARNING は出ると思いますが、最終的にエラーも無く Epoch プログレスバーが 100% になり、プロンプトが返ってくればおそらく成功です。  
+参考まで、6秒の単一の音声ファイルを学習するのに、7分20秒かかりました。  
+
+これで完成しているはずなので、Web UI に戻り、モデル一覧の下の [ 更新 ] ボタンをクリックします。  
+モデル一覧に自分が作ったモデルがあると思います。  
+選択して [ ロード ] ボタンをクリックすると、音声合成に使用できます。  
+
+以下は全てオリジナルの repo の内容になります。使い方の詳細はこちらをご参照ください。  
 
 **利用の際は必ず[お願いとデフォルトモデルの利用規約](/docs/TERMS_OF_USE.md)をお読みください。**
 

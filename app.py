@@ -33,8 +33,9 @@ parser.add_argument("--share", action="store_true")
 
 args = parser.parse_args()
 device = args.device
-if device == "cuda" and not torch.cuda.is_available():
-    device = "cpu"
+#if device == "cuda" and not torch.cuda.is_available():
+#    device = "cpu"
+device = "mps" # Apple Silicon Mac 専用で、MPS 決め打ち
 
 # if not args.skip_default_models:
 #     download_default_models()
