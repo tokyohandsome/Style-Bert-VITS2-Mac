@@ -23,7 +23,7 @@ python initialize.py
 ```
 python app.py
 ```
-時間がかかりますが自動的にブラウザで開くはずなので、お待ちください。  
+時間がかかりますが自動的にブラウザで開くはずです。少々お待ちください。  
 
 ## データセット作成
 ここはすみませんがとりあえず手作業でお願いします。  
@@ -31,7 +31,7 @@ python app.py
 2. モデル名 (フォルダ名) を決める (以下、`ModelName` として進めます)
 3. Data/ModelName/raw フォルダを作る `mkdir Data/ModelName/raw`
 4. Data/ModelName/raw フォルダに音声ファイルを格納
-4. Data/ModelName/esd.list というテキストファイルを作り、音声ファイル名と書き置きしたテキストを記入
+4. Data/ModelName/esd.list というテキストファイルを作り、音声ファイル名と書き起こしたテキストを記入  
 例:
 ```esd.list
 audio1.wav|ModelName|JP|こんにちは、おげんきですか？
@@ -76,7 +76,7 @@ Data/ModelName
 実際の学習はコマンドから実行します。
 1. Web UI を開いているのとは別のターミナルを開く
 2. Style-Bert-VITS2-Mac ディレクトリへ入る
-3. 以下コマンドを実行する (ModelName はご自身のものに書き換えてください)
+3. 以下コマンドを実行する (`ModelName` はご自身のものに書き換えてください)
 ```
 python train_ms_jp_extra_cpu.py --config Data/ModelName/config.json --model Data/ModelName
 ```
@@ -89,6 +89,7 @@ CPU を使った学習が開始します。
 選択して [ ロード ] ボタンをクリックすると、音声合成に使用できます。  
 
 以下は全てオリジナルの repo の内容になります。使い方の詳細はこちらをご参照ください。  
+---
 
 **利用の際は必ず[お願いとデフォルトモデルの利用規約](/docs/TERMS_OF_USE.md)をお読みください。**
 
