@@ -8,7 +8,7 @@ Style-Bert-VITS2 Ver 2.6.1 をフォークして開発を進めます。
 とりあえずある程度を手動でやってもらうこととして、CPU だけで学習させてモデル一覧に追加されるまでの手順を以下にまとめます。  
 
 ## インストール
-'''
+```
 git clone https://github.com/tokyohandsome/Style-Bert-VITS2-Mac.git
 cd Style-Bert-VITS2-Mac
 python3 -m venv venv
@@ -16,13 +16,13 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 python initialize.py
-'''
+```
 
 ## Web UI 起動
 `app.py` は mps 決め打ちに書き換えていますので、音声合成は Mac の GPU で実行されます。  
-'''
+```
 python app.py
-'''
+```
 時間がかかりますが自動的にブラウザで開くはずなので、お待ちください。  
 
 ## データセット作成
