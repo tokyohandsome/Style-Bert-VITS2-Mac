@@ -1,4 +1,12 @@
-# Style-Bert-VITS2
+# Style-Bert-VITS2-Mac
+
+Style-Bert-VITS2 を macOS で動くようにする repo です。  
+Style-Bert-VITS2 Ver 2.6.1 をフォークして開発を進めます。  
+さしあたって、学習が CPU だけで行えるようになりました。当然遅いですが、これまで Mac では学習する手立てが無かったので一歩前進です。  
+試してないですが、Windows や Linux で NVIDIA GPU が無い環境でも実行できるかと。  
+近々変更済みスクリプトを公開します。  
+
+以下は全てオリジナルの repo の内容になります。
 
 **利用の際は必ず[お願いとデフォルトモデルの利用規約](/docs/TERMS_OF_USE.md)をお読みください。**
 
