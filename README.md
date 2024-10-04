@@ -19,11 +19,11 @@ python initialize.py
 ```
 
 ## Web UI 起動
-`app.py` は mps 決め打ちに書き換えていますので、音声合成は Mac の GPU で実行されます。  
+`app.py` は CUDA/MPS/CPU が環境に応じて選択されるようにしました。 Apple Silicon Mac も音声合成は GPU (MPS) で実行されます。  
 ```
 python app.py
 ```
-時間がかかりますが自動的にブラウザで開くはずです。少々お待ちください。  
+起動までに数分かかりますが自動的にブラウザで開くはずです。辛抱強くお待ちください。  
 
 ## データセット作成
 ここはすみませんがとりあえず手作業でお願いします。  
@@ -31,14 +31,14 @@ python app.py
 2. モデル名 (フォルダ名) を決める (以下、`ModelName` として進めます)
 3. Data/ModelName/raw フォルダを作る `mkdir Data/ModelName/raw`
 4. Data/ModelName/raw フォルダに音声ファイルを格納
-4. Data/ModelName/esd.list というテキストファイルを作り、音声ファイル名と書き起こしたテキストを記入  
+4. Data/ModelName/esd.list というテキストファイルを作り、音声ファイル名と、文字起こししたテキストを記入  
 例:
 ```esd.list
 audio1.wav|ModelName|JP|こんにちは、おげんきですか？
 ```
 ※音声ファイルの拡張子は、別のフォーマットであっても必ず '**.wav**' とする  
 
-音声ファイル一つの場合の構成:
+音声ファイルが一つの場合のファイル構成:
 ```
 Data/ModelName
 ├── esd.list
