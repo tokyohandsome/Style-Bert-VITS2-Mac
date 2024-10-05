@@ -218,8 +218,8 @@ def run():
         train_loader = DataLoader(
             train_dataset,
             # メモリ消費量を減らそうとnum_workersを1にしてみる
-            # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
-            num_workers=1,
+            num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
+            #num_workers=1,
             shuffle=False,
             pin_memory=True,
             collate_fn=collate_fn,
@@ -227,14 +227,14 @@ def run():
             # batch_size=hps.train.batch_size,
             persistent_workers=True,
             # これもメモリ消費量を減らそうとしてコメントアウト
-            # prefetch_factor=6,
+            prefetch_factor=6,
         )
     else:
         train_loader = DataLoader(
             train_dataset,
             # メモリ消費量を減らそうとnum_workersを1にしてみる
-            # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
-            num_workers=1,
+            num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
+            #num_workers=1,
             shuffle=True,
             pin_memory=True,
             collate_fn=collate_fn,
@@ -242,7 +242,7 @@ def run():
             batch_size=hps.train.batch_size,
             persistent_workers=True,
             # これもメモリ消費量を減らそうとしてコメントアウト
-            # prefetch_factor=6,
+            prefetch_factor=6,
         )
     eval_dataset = None
     eval_loader = None
