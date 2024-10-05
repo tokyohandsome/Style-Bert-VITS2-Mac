@@ -34,7 +34,8 @@ from style_bert_vits2.models.models_jp_extra import (
 from style_bert_vits2.nlp.symbols import SYMBOLS
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
-torch.set_num_threads(1)
+#torch.set_num_threads(1)
+torch.set_num_threads(os.cpu_count()//2)
 torch.set_float32_matmul_precision("medium")
 
 config = get_config()
