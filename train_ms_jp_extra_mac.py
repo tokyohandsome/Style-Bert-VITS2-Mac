@@ -2,16 +2,15 @@ import argparse
 import datetime
 import gc
 import os
-import platform
+#import platform
 from contextlib import nullcontext
 
 import torch
 import torch.distributed as dist
 from huggingface_hub import HfApi
-#from torch.cuda.amp import GradScaler, autocast
-from torch.amp import GradScaler, autocast
+from torch.amp import GradScaler
 from torch.nn import functional as F
-from torch.nn.parallel import DistributedDataParallel as DDP
+#from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -235,29 +234,29 @@ def run():
         train_loader = DataLoader(
             train_dataset,
             # CPU の 80% を使用
-            #num_workers=int(os.cpu_count()*4/5),
+            num_workers=int(os.cpu_count()*4/5),
             shuffle=False,
             pin_memory=True,
             collate_fn=collate_fn,
             batch_sampler=train_sampler,
             # batch_size=hps.train.batch_size,
-            #persistent_workers=True,
+            persistent_workers=True,
             # コメントアウトされていたものを復活
-            #prefetch_factor=6,
+            prefetch_factor=6,
         )
     else:
         train_loader = DataLoader(
             train_dataset,
             # CPU の 80% を使用
-            #num_workers=int(os.cpu_count()*4/5),
+            num_workers=int(os.cpu_count()*4/5),
             shuffle=True,
             pin_memory=True,
             collate_fn=collate_fn,
             # batch_sampler=train_sampler,
             batch_size=hps.train.batch_size,
-            #persistent_workers=True,
+            persistent_workers=True,
             # コメントアウトされていたものを復活
-            #prefetch_factor=6,
+            prefetch_factor=6,
         )
     eval_dataset = None
     eval_loader = None
@@ -340,7 +339,7 @@ def run():
         gin_channels=hps.model.gin_channels,
         slm=hps.model.slm,
         # 追加
-        torch_dtype=torch.bfloat16,
+        #torch_dtype=torch.bfloat16,
     #).cuda(local_rank)
     ).to('mps')
     #net_g = net_g.to('mps')
@@ -361,7 +360,6 @@ def run():
             param.requires_grad = False
 
     #net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
-    #net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cpu(local_rank)
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).to('mps')
     #net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).to('cpu')
     optim_g = torch.optim.AdamW(
@@ -577,7 +575,7 @@ def run():
         if rank == 0:
             train_and_evaluate(
                 rank,
-                local_rank,
+                #local_rank,
                 epoch,
                 hps,
                 [net_g, net_d, net_dur_disc, net_wd, wl],
@@ -593,7 +591,7 @@ def run():
         else:
             train_and_evaluate(
                 rank,
-                local_rank,
+                #local_rank,
                 epoch,
                 hps,
                 [net_g, net_d, net_dur_disc, net_wd, wl],
@@ -684,7 +682,7 @@ def run():
 
 def train_and_evaluate(
     rank,
-    local_rank,
+    #local_rank,
     epoch,
     hps,
     nets,
@@ -740,7 +738,6 @@ def train_and_evaluate(
         #x, x_lengths = x.cpu(), x_lengths.cpu(
         x = x.to('mps')
         x_lengths = x_lengths.to('mps')
-        #x, x_lengths = x.mps(local_rank, non_blocking=True), x_lengths.mps(
             #local_rank, non_blocking=True
         #)
         #spec, spec_lengths = spec.cuda(
@@ -750,8 +747,6 @@ def train_and_evaluate(
             #local_rank, non_blocking=True
         #), spec_lengths.cuda(local_rank, non_blocking=True)
         #), spec_lengths.cpu()
-        #), spec_lengths.mps()
-        #), spec_lengths.mps(local_rank, non_blocking=True)
         #y, y_lengths = y.cuda(local_rank, non_blocking=True), y_lengths.cuda(
         #y, y_lengths = y.cpu(), y_lengths.cpu(
         y = y.to('mps')
@@ -834,11 +829,11 @@ def train_and_evaluate(
             # Discriminator
             y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
             #with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-            #with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.float32):
             #with autocast('cpu', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             with nullcontext('mps'):
                 loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(
                     y_d_hat_r, y_d_hat_g
+                    #y_d_hat_r.to(torch.bfloat16), y_d_hat_g.to(torch.bfloat16)
                 )
                 loss_disc_all = loss_disc
             if net_dur_disc is not None:
