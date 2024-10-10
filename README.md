@@ -75,7 +75,7 @@ Data/ModelName
 
 実際の学習はコマンドから実行します。
 1. Web UI を開いているのとは別のターミナルを開く
-2. Style-Bert-VITS2-Mac ディレクトリへ入る
+2. Style-Bert-VITS2-Mac ディレクトリ & 仮想環境へ入る
 3. 以下コマンドを実行する (`ModelName` はご自身のものに書き換えてください)
 ```
 python train_ms_jp_extra_cpu.py --config Data/ModelName/config.json --model Data/ModelName
