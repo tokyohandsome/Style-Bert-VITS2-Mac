@@ -279,8 +279,6 @@ def run():
         net_dur_disc = None
 
     if hps.model.use_wavlm_discriminator is True:
-        print(f'local_rank = {local_rank}')
-        print(f'type(local_rank) = {type(local_rank)}')
         net_wd = WavLMDiscriminator(
             hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
         )

@@ -3,12 +3,11 @@ import datetime
 import gc
 import os
 #import platform
-from contextlib import nullcontext
 
 import torch
 import torch.distributed as dist
 from huggingface_hub import HfApi
-from torch.amp import GradScaler
+from torch.amp import GradScaler, autocast
 from torch.nn import functional as F
 #from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
@@ -44,9 +43,10 @@ from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 #)
 torch.set_num_threads(1)
 torch.set_float32_matmul_precision("medium")
-#torch.backends.cuda.sdp_kernel("flash")
-#torch.backends.cuda.enable_flash_sdp(True)
-#torch.backends.cuda.enable_mem_efficient_sdp(
+#torch.device=("mps")
+#torch.backends.mps.sdp_kernel("flash")
+#torch.backends.mps.enable_flash_sdp(True)
+#torch.backends.mps.enable_mem_efficient_sdp(
 #    True
 #)  # Not available if torch version is lower than 2.0
 
@@ -129,8 +129,6 @@ def run():
 
     #backend = "nccl"
     backend = "gloo"
-    #if platform.system() == "Windows":
-    #    backend = "gloo"  # If Windows,switch to gloo backend.
     dist.init_process_group(
         backend=backend,
         init_method="env://",
@@ -208,8 +206,6 @@ def run():
         )
 
     torch.manual_seed(hps.train.seed)
-    #torch.cuda.set_device(local_rank)
-    #torch.cpu.set_device(local_rank)
 
     global global_step
     writer = None
@@ -234,7 +230,8 @@ def run():
         train_loader = DataLoader(
             train_dataset,
             # CPU の 80% を使用
-            num_workers=int(os.cpu_count()*4/5),
+            #num_workers=int(os.cpu_count()*4/5),
+            num_workers=1,
             shuffle=False,
             pin_memory=True,
             collate_fn=collate_fn,
@@ -242,13 +239,14 @@ def run():
             # batch_size=hps.train.batch_size,
             persistent_workers=True,
             # コメントアウトされていたものを復活
-            prefetch_factor=6,
+            #prefetch_factor=6,
         )
     else:
         train_loader = DataLoader(
             train_dataset,
             # CPU の 80% を使用
-            num_workers=int(os.cpu_count()*4/5),
+            #num_workers=int(os.cpu_count()*4/5),
+            num_workers=1,
             shuffle=True,
             pin_memory=True,
             collate_fn=collate_fn,
@@ -256,7 +254,7 @@ def run():
             batch_size=hps.train.batch_size,
             persistent_workers=True,
             # コメントアウトされていたものを復活
-            prefetch_factor=6,
+            #prefetch_factor=6,
         )
     eval_dataset = None
     eval_loader = None
@@ -287,17 +285,15 @@ def run():
             3,
             0.1,
             gin_channels=hps.model.gin_channels if hps.data.n_speakers != 0 else 0,
-        )
-        net_dur_disc = net_dur_disc.to('mps')
+        ).to('mps')
+        #net_dur_disc = net_dur_disc.to('mps')
     else:
         net_dur_disc = None
-
     if hps.model.use_wavlm_discriminator is True:
         net_wd = WavLMDiscriminator(
             hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
-        )
-        net_wd = net_wd.to('mps')
-        #net_wd.to('cpu')
+        ).to('mps')
+        #net_wd = net_wd.to('mps')
     else:
         net_wd = None
     if hps.model.use_spk_conditioned_encoder is True:
@@ -338,13 +334,8 @@ def run():
         use_spectral_norm=hps.model.use_spectral_norm,
         gin_channels=hps.model.gin_channels,
         slm=hps.model.slm,
-        # 追加
-        #torch_dtype=torch.bfloat16,
-    #).cuda(local_rank)
     ).to('mps')
-    #net_g = net_g.to('mps')
-    #net_g.to('cpu')
-
+    #net_g.to('mps')
     if getattr(hps.train, "freeze_JP_bert", False):
         logger.info("Freezing (JP) bert encoder !!!")
         for param in net_g.enc_p.bert_proj.parameters():
@@ -359,9 +350,7 @@ def run():
         for param in net_g.dec.parameters():
             param.requires_grad = False
 
-    #net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).to('mps')
-    #net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).to('cpu')
     optim_g = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, net_g.parameters()),
         hps.train.learning_rate,
@@ -547,15 +536,11 @@ def run():
             net_wd,
             hps.data.sampling_rate,
             hps.model.slm.sr,
-        #).to(local_rank)
-        #).to('cpu')
         ).to('mps')
     else:
         scheduler_wd = None
         wl = None
-    #scaler = GradScaler(enabled=hps.train.bf16_run)
     scaler = GradScaler("mps", enabled=hps.train.bf16_run)
-    #scaler = GradScaler("cpu", enabled=hps.train.bf16_run)
     logger.info("Start training.")
 
     diff = abs(
@@ -575,7 +560,7 @@ def run():
         if rank == 0:
             train_and_evaluate(
                 rank,
-                #local_rank,
+                local_rank,
                 epoch,
                 hps,
                 [net_g, net_d, net_dur_disc, net_wd, wl],
@@ -591,7 +576,7 @@ def run():
         else:
             train_and_evaluate(
                 rank,
-                #local_rank,
+                local_rank,
                 epoch,
                 hps,
                 [net_g, net_d, net_dur_disc, net_wd, wl],
@@ -682,7 +667,7 @@ def run():
 
 def train_and_evaluate(
     rank,
-    #local_rank,
+    local_rank,
     epoch,
     hps,
     nets,
@@ -695,6 +680,9 @@ def train_and_evaluate(
     pbar: tqdm,
     initial_step: int,
 ):
+    # Debug
+    #torch.autograd.set_detect_anomaly(True)
+
     net_g, net_d, net_dur_disc, net_wd, wl = nets
     optim_g, optim_d, optim_dur_disc, optim_wd = optims
     scheduler_g, scheduler_d, scheduler_dur_disc, scheduler_wd = schedulers
@@ -724,61 +712,22 @@ def train_and_evaluate(
         bert,
         style_vec,
     ) in enumerate(train_loader):
-        #if net_g.module.use_noise_scaled_mas:
         if net_g.use_noise_scaled_mas:
             current_mas_noise_scale = (
-                #net_g.module.mas_noise_scale_initial
                 net_g.mas_noise_scale_initial
-                #- net_g.module.noise_scale_delta * global_step
                 - net_g.noise_scale_delta * global_step
             )
-            #net_g.module.current_mas_noise_scale = max(current_mas_noise_scale, 0.0)
             net_g.current_mas_noise_scale = max(current_mas_noise_scale, 0.0)
-        #x, x_lengths = x.cuda(local_rank, non_blocking=True), x_lengths.cuda(
-        #x, x_lengths = x.cpu(), x_lengths.cpu(
-        x = x.to('mps')
-        x_lengths = x_lengths.to('mps')
-            #local_rank, non_blocking=True
-        #)
-        #spec, spec_lengths = spec.cuda(
-        #spec, spec_lengths = spec.cpu(
-        spec = spec.to('mps')
-        spec_lengths = spec_lengths.to('mps')
-            #local_rank, non_blocking=True
-        #), spec_lengths.cuda(local_rank, non_blocking=True)
-        #), spec_lengths.cpu()
-        #y, y_lengths = y.cuda(local_rank, non_blocking=True), y_lengths.cuda(
-        #y, y_lengths = y.cpu(), y_lengths.cpu(
-        y = y.to('mps')
-        y_lengths = y_lengths.to('mps')
-        #y, y_lengths = y.mps(local_rank, non_blocking=True), y_lengths.mps(
-            #local_rank, non_blocking=True
-        #)
-        #speakers = speakers.cuda(local_rank, non_blocking=True)
-        #speakers = speakers.cpu()
+        x, x_lengths = x.to('mps'), x_lengths.to('mps')
+        spec, spec_lengths = spec.to('mps'), spec_lengths.to('mps')
+        y, y_lengths = y.to('mps'), y_lengths.to('mps')
         speakers = speakers.to('mps')
-        #speakers = speakers.mps(local_rank, non_blocking=True)
-        #tone = tone.cuda(local_rank, non_blocking=True)
-        #tone = tone.cpu()
         tone = tone.to('mps')
-        #tone = tone.mps(local_rank, non_blocking=True)
-        #language = language.cuda(local_rank, non_blocking=True)
-        #language = language.cpu()
         language = language.to('mps')
-        #language = language.mps(local_rank, non_blocking=True)
-        #bert = bert.cuda(local_rank, non_blocking=True)
-        #bert = bert.cpu()
         bert = bert.to('mps')
-        #bert = bert.mps(local_rank, non_blocking=True)
-        #style_vec = style_vec.cuda(local_rank, non_blocking=True)
-        #style_vec = style_vec.cpu()
         style_vec = style_vec.to('mps')
-        #style_vec = style_vec.mps(local_rank, non_blocking=True)
 
-        #with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-        #with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.float32):
-        #with autocast('cpu', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-        with nullcontext('mps'):
+        with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             (
                 y_hat,
                 l_length,
@@ -828,12 +777,9 @@ def train_and_evaluate(
 
             # Discriminator
             y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
-            #with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-            #with autocast('cpu', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-            with nullcontext('mps'):
+            with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                 loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(
                     y_d_hat_r, y_d_hat_g
-                    #y_d_hat_r.to(torch.bfloat16), y_d_hat_g.to(torch.bfloat16)
                 )
                 loss_disc_all = loss_disc
             if net_dur_disc is not None:
@@ -844,10 +790,7 @@ def train_and_evaluate(
                     logw.detach(),
                     g.detach(),
                 )
-                #with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-                #with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.float32):
-                #with autocast('cpu', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-                with nullcontext('mps'):
+                with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                     # TODO: I think need to mean using the mask, but for now, just mean all
                     (
                         loss_dur_disc,
@@ -868,10 +811,8 @@ def train_and_evaluate(
             if net_wd is not None:
                 # logger.debug(f"y.shape: {y.shape}, y_hat.shape: {y_hat.shape}")
                 # shape: (batch, 1, time)
-                #with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-                #with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
+                with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                 #with autocast('cpu', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-                with nullcontext('mps'):
                     loss_slm = wl.discriminator(
                         y.detach().squeeze(1), y_hat.detach().squeeze(1)
                     ).mean()
@@ -891,10 +832,7 @@ def train_and_evaluate(
         grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
         scaler.step(optim_d)
 
-        #with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-        #with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.float32):
-        #with autocast('cpu', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-        with nullcontext('mps'):
+        with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             if net_dur_disc is not None:
@@ -902,11 +840,9 @@ def train_and_evaluate(
             if net_wd is not None:
                 loss_lm = wl(y.detach().squeeze(1), y_hat.squeeze(1)).mean()
                 loss_lm_gen = wl.generator(y_hat.squeeze(1))
-            #with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-            #with autocast('mps,', enabled=hps.train.bf16_run, dtype=torch.float):
-            #with autocast('cpu', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-            with nullcontext('mps'):
+            with autocast('mps', enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                 loss_dur = torch.sum(l_length.float())
+                #loss_dur = torch.sum(l_length)
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
                 loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl
 
@@ -1094,9 +1030,7 @@ def train_and_evaluate(
             pbar.update()
 
     gc.collect()
-    #torch.cuda.empty_cache()
     torch.mps.empty_cache()
-    #torch.cpu.empty_cache()
     if pbar is None and rank == 0:
         logger.info(f"====> Epoch: {epoch}, step: {global_step}")
 
@@ -1121,24 +1055,16 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             bert,
             style_vec,
         ) in enumerate(eval_loader):
-            #x, x_lengths = x.cuda(), x_lengths.cuda()
             x = x.to('mps')
             x_lengths = x_lengths.to('mps')
-            #spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
             spec = spec.to('mps')
             spec_lengths = spec_lengths.to('mps')
-            #y, y_lengths = y.cuda(), y_lengths.cuda()
             y = y.to('mps')
             y_lengths = y_lengths.to('mps')
-            #speakers = speakers.cuda()
             speakers = speakers.to('mps')
-            #bert = bert.cuda()
             bert = bert.to('mps')
-            #tone = tone.cuda()
             tone = tone.to('mps')
-            #language = language.cuda()
             language = language.to('mps')
-            #style_vec = style_vec.cuda()
             style_vec = style_vec.to('mps')
             for use_sdp in [True, False]:
                 y_hat, attn, mask, *_ = generator.module.infer(

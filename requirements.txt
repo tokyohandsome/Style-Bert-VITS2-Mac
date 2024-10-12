@@ -13,6 +13,7 @@ protobuf==4.25
 psutil
 punctuators
 pyannote.audio>=3.1.0
+pydub
 pyloudnorm
 pyopenjtalk-dict
 pypinyin
@@ -20,6 +21,8 @@ pyworld-prebuilt
 stable_ts
 tensorboard
 torch<2.4
+#torch
 torchaudio<2.4
+#torchaudio
 transformers
 umap-learn
