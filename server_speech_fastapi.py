@@ -256,7 +256,7 @@ if __name__ == "__main__":
         logger.success("Audio data generated and sent successfully")
         with BytesIO() as wavContent:
             wavfile.write(wavContent, sr, audio)
-            # 以下 2行追加して、音声を再生
+            # 以下 2行追加して、音声を再生。wav のかわりに、テキストを返す
             speech = AudioSegment.from_file(wavContent, format="wav")
             play(speech)
             #return Response(content=wavContent.getvalue(), media_type="audio/wav")
