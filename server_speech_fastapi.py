@@ -259,7 +259,8 @@ if __name__ == "__main__":
             # 以下 2行追加して、音声を再生
             speech = AudioSegment.from_file(wavContent, format="wav")
             play(speech)
-            return Response(content=wavContent.getvalue(), media_type="audio/wav")
+            #return Response(content=wavContent.getvalue(), media_type="audio/wav")
+            return Response(content=text, media_type="text/html")
 
     @app.get("/models/info")
     def get_loaded_models_info():
