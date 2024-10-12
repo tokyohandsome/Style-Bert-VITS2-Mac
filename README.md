@@ -88,6 +88,14 @@ CPU を使った学習が開始します。
 モデル一覧に自分が作ったモデルがあると思います。  
 選択して [ ロード ] ボタンをクリックすると、音声合成に使用できます。  
 
+2024.10.12 追加:  
+## API サーバにしゃべらせる
+Dify 等の AI ツールから API で音声合成させ、そのまま API サーバにしゃべらせる乱暴な処理を元のスクリプトに追加しました。  
+すでに環境構築済みであれば、pydub をインストールしてください: `pip install pydub`  
+その後、この repo にある [server_speech_fastapi.py](https://github.com/tokyohandsome/Style-Bert-VITS2-Mac/blob/master/server_speech_fastapi.py) を実行します。  
+`python server_speech_fastapi.py`  
+オリジナルの API サーバと同じ使い方ですが、テキストとモデル名が POST されると、音声合成してサーバが発声します。クライアントには発声完了後にテキストを返します。  
+
 以下は全てオリジナルの repo の内容になります。使い方の詳細はこちらをご参照ください。  
 
 ---
