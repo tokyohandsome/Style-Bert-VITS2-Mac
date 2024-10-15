@@ -93,7 +93,6 @@ def load_models(model_holder: TTSModelHolder):
         # model.load()
         loaded_models.append(model)
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cpu", action="store_true", help="Use CPU instead of GPU")
@@ -102,10 +101,17 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if args.cpu:
-        device = "cpu"
+    # 使えれば CUDA もしくは MPS、どちらも無ければ CPU
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_built():
+        device = "mps"
     else:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = "cpu"
+
+    # CPU なら、マシンのキャパの半分を割り振る。環境に応じて調整してください
+    if device == "cpu":
+        torch.set_num_threads(os.cpu_count()//2)
 
     model_dir = Path(args.dir)
     model_holder = TTSModelHolder(model_dir, device)

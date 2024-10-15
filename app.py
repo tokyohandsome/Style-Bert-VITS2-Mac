@@ -42,7 +42,7 @@ else:
     device = "cpu"
 
 # Set the device to CPU as currently PyTorch Nightly fails with MPS to generate voice.
-device = "cpu"
+#device = "cpu"
 
 # if not args.skip_default_models:
 #     download_default_models()

@@ -341,7 +341,9 @@ def train(
     with open("config.yml", "w", encoding="utf-8") as f:
         yaml.dump(yml_data, f, allow_unicode=True)
 
-    train_py = "train_ms.py" if not use_jp_extra else "train_ms_jp_extra.py"
+    #train_py = "train_ms.py" if not use_jp_extra else "train_ms_jp_extra.py"
+    # Use CPU to train model.
+    train_py = "train_ms.py" if not use_jp_extra else "train_ms_jp_extra_cpu.py"
     cmd = [
         train_py,
         "--config",
@@ -721,7 +723,7 @@ def create_train_app():
                 value=False,
             )
             use_jp_extra_train = gr.Checkbox(
-                label="JP-Extra版を使う",
+                label="JP-Extra (CPU) 版を使う",
                 value=True,
             )
             not_use_custom_batch_sampler = gr.Checkbox(
