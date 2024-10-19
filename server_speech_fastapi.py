@@ -104,8 +104,9 @@ if __name__ == "__main__":
     # 使えれば CUDA もしくは MPS、どちらも無ければ CPU
     if torch.cuda.is_available():
         device = "cuda"
-    elif torch.backends.mps.is_built():
-        device = "mps"
+    # MPS だと、音声合成した声がかすれる現象が発生しているため、CPU に決め打ち
+    #elif torch.backends.mps.is_built():
+    #    device = "mps"
     else:
         device = "cpu"
 

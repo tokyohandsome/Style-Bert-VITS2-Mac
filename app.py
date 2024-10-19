@@ -15,6 +15,7 @@ from style_bert_vits2.nlp.japanese import pyopenjtalk_worker
 from style_bert_vits2.nlp.japanese.user_dict import update_dict
 from style_bert_vits2.tts_model import TTSModelHolder
 
+import os
 
 # このプロセスからはワーカーを起動して辞書を使いたいので、ここで初期化
 pyopenjtalk_worker.initialize_worker()
@@ -36,10 +37,15 @@ device = args.device
 
 if torch.cuda.is_available():
     device = "cuda"
-elif torch.backends.mps.is_built():
-    device = "mps"
+# MPS だと、音声合成した声がかすれる現象が発生しているため、CPU に決め打ち
+#elif torch.backends.mps.is_built():
+#    device = "mps"
 else:
     device = "cpu"
+
+# CPU なら、マシンのキャパの半分を割り振る。環境に応じて調整してください
+if device == "cpu":
+    torch.set_num_threads(os.cpu_count()//2)
 
 # Set the device to CPU as currently PyTorch Nightly fails with MPS to generate voice.
 #device = "cpu"
