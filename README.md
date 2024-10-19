@@ -19,7 +19,8 @@ python initialize.py
 ```
 
 ## Web UI 起動
-`app.py` は CUDA/MPS/CPU が環境に応じて選択されるようにしました。 Apple Silicon Mac も音声合成は GPU (MPS) で実行されます。  
+~`app.py` は CUDA/MPS/CPU が環境に応じて選択されるようにしました。 Apple Silicon Mac も音声合成は GPU (MPS) で実行されます。~  
+MPS で音声合成すると声がかすれる事象が確認されたため、CPU を使用するように変更しました (ver. 1.0.4)。  
 ```
 python app.py
 ```
