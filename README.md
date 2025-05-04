@@ -1,6 +1,7 @@
 # Style-Bert-VITS2-Mac
 
 Style-Bert-VITS2 を macOS で動くようにする repo です。  
+Apple Silicon (M1, M2, M3, M4, etc.) 必須です。    
 Style-Bert-VITS2 Ver 2.6.1 をフォークして開発を進めます。  
 さしあたって、学習が CPU だけで行えるようになりました。当然遅いですが、これまで Mac では学習する手立てが無かったので一歩前進です。  
 試してないですが、Windows や Linux で NVIDIA GPU が無い環境でも実行できるかと。  
@@ -11,7 +12,7 @@ Style-Bert-VITS2 Ver 2.6.1 をフォークして開発を進めます。
 ```
 git clone https://github.com/tokyohandsome/Style-Bert-VITS2-Mac.git
 cd Style-Bert-VITS2-Mac
-python3 -m venv venv
+python3.11 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
