@@ -37,9 +37,8 @@ device = args.device
 
 if torch.cuda.is_available():
     device = "cuda"
-# MPS だと、音声合成した声がかすれる現象が発生しているため、CPU に決め打ち
-#elif torch.backends.mps.is_built():
-#    device = "mps"
+elif torch.backends.mps.is_built():
+    device = "mps"
 else:
     device = "cpu"
 
